@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 Short description
 
@@ -150,6 +150,7 @@ function syntWithPootle()
         processShhCommand $ssh.RunCommand("sudo /opt/bitnami/apps/pootle/bin/pootle sync_stores --noinput --project=$pootleServerProject --language=$targetCulture -v 3")
         processShhCommand $ssh.RunCommand("sudo chmod -R g+rw $pootleServerRootPath")
 
+        $xlfFilesToSync = getRemoteFiles
         transferTranslations $xlfFilesToSync -direction download
     }
     finally
@@ -160,6 +161,47 @@ function syntWithPootle()
         $ssh.Disconnect()
         $ssh.Dispose()
     }
+}
+
+function getRemoteFiles()
+{
+    $resultFiles = [System.Collections.Generic.List[System.IO.FileInfo]]::new()
+    $sftpDir = $sftp.Get("$pootleServerRootPath/$pootleServerProject/$targetCulture")
+    $files = sftpListDirectoryRecursive $sftpDir.FullName
+    $files |% {
+        #$file = $files[2]
+        $file = $_
+        $file = $file.Remove(0, $sftpDir.FullName.Length)
+        $resultFiles.Add((Join-Path $exportXlifRootTo $file))
+    }
+
+    return $resultFiles
+}
+
+function sftpListDirectoryRecursive($remoteDir)
+{
+    $result = [System.Collections.Generic.List[string]]::new()
+    $files = $sftp.ListDirectory($remoteDir)
+    $files |% {
+        #$file = $files[2]
+        $file = $_
+        if ($file.FullName.EndsWith(".") -or $file.Name.StartsWith("."))
+        {
+            return
+        }
+        if ($file.IsDirectory)
+        {
+            Write-Verbose "Listing $($file.FullName)"
+            [System.Collections.Generic.List[string]] $subResult = sftpListDirectoryRecursive $file.FullName
+            $result.AddRange($subResult)
+        }
+        elseif ($file.IsRegularFile)
+        {
+            $result.Add($file.FullName)
+        }
+    }
+
+    return $result
 }
 
 function processShhCommand([Renci.SshNet.SshCommand]$sshCmd)
