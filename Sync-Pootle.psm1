@@ -166,8 +166,8 @@ function syntWithPootle()
 function getRemoteFiles()
 {
     $resultFiles = [System.Collections.Generic.List[System.IO.FileInfo]]::new()
-    $sftpDir = $sftp.Get("$pootleServerRootPath/$pootleServerProject/$targetCulture")
-    $files = sftpListDirectoryRecursive $sftpDir.FullName
+    $sftpDir = $sftp.Get("$pootleServerRootPath/$pootleServerProject")
+    $files = sftpListDirectoryRecursive "$($sftpDir.FullName)/$targetCulture"
     $files |% {
         #$file = $files[2]
         $file = $_
@@ -226,7 +226,7 @@ function processShhCommand([Renci.SshNet.SshCommand]$sshCmd)
 function areFilesEqual([System.IO.FileInfo]$fi, $remoteFilename)
 {
     $bothFilesHasSameHash = $false
-    if ($sftp.Exists($remoteFilename))
+    if ($sftp.Exists($remoteFilename) -and $fi.Exists)
     {
         $hashSftp = getSftpHash($remoteFilename)
         $hashLocal = (Get-FileHash $fi.FullName -Algorithm SHA256).Hash
@@ -277,6 +277,7 @@ function transferTranslations([System.IO.FileInfo[]]$files, [ValidateSet("upload
 
                     if (!$bothFilesHasSameHash)
                     {
+                        $fi.Directory.Create()
                         [System.IO.FileInfo]$tempFi = Join-Path $fi.Directory.FullName ([System.IO.Path]::GetRandomFileName())
                         $file = $tempFi.OpenWrite()
                         $sftp.DownloadFile($remoteFilename, $file)
