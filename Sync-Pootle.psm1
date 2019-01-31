@@ -45,11 +45,11 @@ function Sync-Pootle
         ,
         # Skip upload from local to remote SSH
         [switch]
-        $skipUpload
+        $processUpload
         ,
         # Skip download operation from remote SSH to local
         [switch]
-        $skipDownload
+        $processDownload
     )
     
     #$VerbosePreference=[System.Management.Automation.ActionPreference]::Continue
@@ -152,14 +152,14 @@ function syntWithPootle()
         $ssh.Connect()
 
         pushd $root
-        if ($skipUpload)
+        if ($processUpload)
         {
             $xlfFilesToSync = @(ls $exportXlifRootTo -Recurse -File)
             transferTranslations $xlfFilesToSync -direction upload
             processShhCommand $ssh.RunCommand("sudo /opt/bitnami/apps/pootle/bin/pootle update_stores --noinput --project=$pootleServerProject --language=$targetCulture -v 3")
         }
         
-        if ($skipDownload)
+        if ($processDownload)
         {
             processShhCommand $ssh.RunCommand("sudo /opt/bitnami/apps/pootle/bin/pootle sync_stores --noinput --project=$pootleServerProject --language=$targetCulture -v 3")
             processShhCommand $ssh.RunCommand("sudo chmod -R g+rw $pootleServerRootPath")
