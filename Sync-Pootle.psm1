@@ -332,7 +332,7 @@ function deleteRemoteExcess([System.IO.DirectoryInfo] $localPath, [string]$remot
     
 function getSftpHash($remoteFilename)
 {
-    $hashResult = $ssh.RunCommand("sha256sum $remoteFilename")
+    $hashResult = $ssh.RunCommand("sha256sum ""$remoteFilename""")
     if ($hashResult.ExitStatus -ne 0 -or [string]::IsNullOrWhiteSpace($hashResult.Result))
     {
         processShhCommand $hashResult
