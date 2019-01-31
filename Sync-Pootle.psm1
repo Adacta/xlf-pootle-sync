@@ -42,6 +42,14 @@ function Sync-Pootle
         ,
         # Delete files in sftp path for missing local source
         [bool]$pootleDeleteExcessFiles = $false
+        ,
+        # Skip upload from local to remote SSH
+        [switch]
+        $skipUpload
+        ,
+        # Skip download operation from remote SSH to local
+        [switch]
+        $skipDownload
     )
     
     #$VerbosePreference=[System.Management.Automation.ActionPreference]::Continue
@@ -144,14 +152,21 @@ function syntWithPootle()
         $ssh.Connect()
 
         pushd $root
-        $xlfFilesToSync = @(ls $exportXlifRootTo -Recurse -File)
-        transferTranslations $xlfFilesToSync -direction upload
-        processShhCommand $ssh.RunCommand("sudo /opt/bitnami/apps/pootle/bin/pootle update_stores --noinput --project=$pootleServerProject --language=$targetCulture -v 3")
-        processShhCommand $ssh.RunCommand("sudo /opt/bitnami/apps/pootle/bin/pootle sync_stores --noinput --project=$pootleServerProject --language=$targetCulture -v 3")
-        processShhCommand $ssh.RunCommand("sudo chmod -R g+rw $pootleServerRootPath")
+        if ($skipUpload)
+        {
+            $xlfFilesToSync = @(ls $exportXlifRootTo -Recurse -File)
+            transferTranslations $xlfFilesToSync -direction upload
+            processShhCommand $ssh.RunCommand("sudo /opt/bitnami/apps/pootle/bin/pootle update_stores --noinput --project=$pootleServerProject --language=$targetCulture -v 3")
+        }
+        
+        if ($skipDownload)
+        {
+            processShhCommand $ssh.RunCommand("sudo /opt/bitnami/apps/pootle/bin/pootle sync_stores --noinput --project=$pootleServerProject --language=$targetCulture -v 3")
+            processShhCommand $ssh.RunCommand("sudo chmod -R g+rw $pootleServerRootPath")
 
-        $xlfFilesToSync = getRemoteFiles
-        transferTranslations $xlfFilesToSync -direction download
+            $xlfFilesToSync = getRemoteFiles
+            transferTranslations $xlfFilesToSync -direction download
+        }
     }
     finally
     {
