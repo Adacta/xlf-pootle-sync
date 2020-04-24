@@ -196,6 +196,10 @@ function getRemoteFiles()
 function sftpListDirectoryRecursive($remoteDir)
 {
     $result = [System.Collections.Generic.List[string]]::new()
+    if (!$sftp.Exists($remoteDir))
+    {
+        return
+    }
     $files = $sftp.ListDirectory($remoteDir)
     $files |% {
         #$file = $files[2]
@@ -256,6 +260,10 @@ function transferTranslations([System.IO.FileInfo[]]$files, [ValidateSet("upload
     $uploadFoldersToSync = New-Object "System.Collections.Generic.Dictionary[System.IO.DirectoryInfo, string]"
 
     [System.IO.DirectoryInfo]$di = $exportXlifRootTo
+    if (!$files)
+    {
+        return
+    }
     $files | % {
         $fi = $_
         $relPath = $fi.Directory.FullName.Remove(0, $di.FullName.Length)
