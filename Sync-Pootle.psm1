@@ -284,7 +284,7 @@ function transferTranslations([System.IO.FileInfo[]]$files, [ValidateSet("upload
                 {
                     if (!$sftp.Exists($remoteFilename))
                     {
-                        processShhCommand $ssh.RunCommand("mkdir --parents $remoteDir")
+                        processShhCommand $ssh.RunCommand("mkdir --parents ""$remoteDir""")
                     }
                     $file = $fi.OpenRead()
                     $sftp.UploadFile($file, $remoteFilename, $true)
