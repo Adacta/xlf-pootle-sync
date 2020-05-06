@@ -212,7 +212,10 @@ function sftpListDirectoryRecursive($remoteDir)
         {
             Write-Verbose "Listing $($file.FullName)"
             [System.Collections.Generic.List[string]] $subResult = sftpListDirectoryRecursive $file.FullName
-            $result.AddRange($subResult)
+            if ($subResult)
+            {
+                $result.AddRange($subResult)
+            }
         }
         elseif ($file.IsRegularFile)
         {
